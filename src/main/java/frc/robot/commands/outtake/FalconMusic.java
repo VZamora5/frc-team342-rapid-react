@@ -13,13 +13,22 @@ public class FalconMusic extends CommandBase {
   private OuttakeSubsystem outtake;
   private Orchestra orchestra;
 
+  private boolean hasStarted = false;
+  private String song;
+
   /** Creates a new FalconMusic. */
-  public FalconMusic(OuttakeSubsystem outtake) {
+  public FalconMusic(OuttakeSubsystem outtake, String song) {
     this.outtake = outtake;
     this.orchestra = this.outtake.getOrchestra();
+    this.song = song;
 
     // Use addRequirements() here to declare subsystem dependencies.
     addRequirements(outtake);
+  }
+
+  public FalconMusic(OuttakeSubsystem outtake) {
+    // TODO: replace empty string with default song name
+    this(outtake, "");
   }
 
   // Called when the command is initially scheduled.
@@ -30,6 +39,7 @@ public class FalconMusic extends CommandBase {
 
     // Play music
     orchestra.play();
+    hasStarted = true;
   }
 
   // Called every time the scheduler runs while the command is scheduled.
@@ -45,6 +55,7 @@ public class FalconMusic extends CommandBase {
   // Returns true when the command should end.
   @Override
   public boolean isFinished() {
-    return false;
+    // isPlaying can return false before song has started so an extra check is needed
+    return !orchestra.isPlaying() && hasStarted;
   }
 }
