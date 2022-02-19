@@ -28,7 +28,7 @@ public class FalconMusic extends CommandBase {
 
   public FalconMusic(OuttakeSubsystem outtake) {
     // TODO: replace empty string with default song name
-    this(outtake, "");
+    this(outtake, "cara-mi-addio.chrp");
   }
 
   // Called when the command is initially scheduled.
