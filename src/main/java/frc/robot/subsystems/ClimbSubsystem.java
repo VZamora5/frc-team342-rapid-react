@@ -39,8 +39,8 @@ public class ClimbSubsystem extends SubsystemBase {
 
   /** Creates a new ClimbSubsystem. */
   public ClimbSubsystem() {
-    climbMotor1 = new WPI_TalonFX(CLIMB_MOTOR_1);
-    climbMotor2 = new WPI_TalonFX(CLIMB_MOTOR_2);
+    climbMotor1 = new WPI_TalonFX(CLIMB_LEFT_MOTOR);
+    climbMotor2 = new WPI_TalonFX(CLIMB_RIGHT_MOTOR);
 
     secondStageMotor1 = new WPI_TalonSRX(CLIMB_SECOND_MOTOR_1);
     secondStageMotor2 = new WPI_TalonSRX(CLIMB_SECOND_MOTOR_2);
@@ -149,6 +149,15 @@ public class ClimbSubsystem extends SubsystemBase {
 
     climbMotor2.getBusVoltage();
     motors.put("Climb motor 2", climbMotor2.getLastError() == ErrorCode.OK);
+
+    secondStageMotor1.getBusVoltage();
+    motors.put("Second stage motor 1", secondStageMotor1.getLastError() == ErrorCode.OK);
+
+    secondStageMotor2.getBusVoltage();
+    motors.put("Second stage motor 2", secondStageMotor2.getLastError() == ErrorCode.OK);
+
+    // encoder check
+    motors.put("Climb rotation encoder", secondStageMotor2.getSensorCollection().getPulseWidthRiseToFallUs() != 0);
     
     return motors;
   }

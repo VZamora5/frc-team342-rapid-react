@@ -27,7 +27,6 @@ public class FalconMusic extends CommandBase {
   }
 
   public FalconMusic(OuttakeSubsystem outtake) {
-    // TODO: replace empty string with default song name
     this(outtake, "cara-mi-addio.chrp");
   }
 
@@ -35,7 +34,7 @@ public class FalconMusic extends CommandBase {
   @Override
   public void initialize() {
     // load music files
-    orchestra.loadMusic(null); // TODO: put something here
+    orchestra.loadMusic(song); 
 
     // Play music
     orchestra.play();

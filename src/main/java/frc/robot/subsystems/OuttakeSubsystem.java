@@ -8,8 +8,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+
 import com.ctre.phoenix.ErrorCode;
 import com.ctre.phoenix.motorcontrol.ControlMode;
+import com.ctre.phoenix.motorcontrol.SupplyCurrentLimitConfiguration;
+import com.ctre.phoenix.motorcontrol.TalonFXControlMode;
+import com.ctre.phoenix.motorcontrol.TalonFXSensorCollection;
 import com.ctre.phoenix.motorcontrol.can.WPI_TalonFX;
 import com.ctre.phoenix.motorcontrol.can.WPI_TalonSRX;
 import com.ctre.phoenix.music.Orchestra;
@@ -28,13 +32,18 @@ public class OuttakeSubsystem extends SubsystemBase {
   // Falcon music
   private Orchestra orchestra;
 
-  private final double LOAD_SPEED = 0.8;
+  /** Encoder from motor 1 */
+  private TalonFXSensorCollection encoder1;
+  private TalonFXSensorCollection encoder2;
+
+  /** Current limiting for both motors. */
+  private SupplyCurrentLimitConfiguration currentLimitConfiguration;
 
   /** The current setpoint */
   private double setpoint = 0;
 
-  /** RPM within the setpoint to be counted as up to speed */
-  private double setpointError = 15;
+  /** The current motor velocity, as measured by encoders */
+  private double velocity = 0;
 
   /** Creates a new OuttakeSubsystem. */
   public OuttakeSubsystem() {
@@ -42,7 +51,11 @@ public class OuttakeSubsystem extends SubsystemBase {
     shootMotor2 = new WPI_TalonFX(SHOOT_MOTOR_2);
     feederMotor = new WPI_TalonSRX(FEEDER_MOTOR);
 
-    shootMotor2.follow(shootMotor1);
+    shootMotor2.setInverted(true);
+    feederMotor.setInverted(true);
+
+    encoder1 = shootMotor1.getSensorCollection();
+    encoder2 = shootMotor2.getSensorCollection();
 
     orchestra = new Orchestra(List.of(shootMotor1, shootMotor2));
 
@@ -50,23 +63,30 @@ public class OuttakeSubsystem extends SubsystemBase {
     shootMotor1.config_kP(1, P);
     shootMotor2.config_kP(1, P);
 
+    shootMotor1.config_kI(1, I);
+    shootMotor2.config_kI(1, I);
+
     shootMotor1.config_kD(1, D);
     shootMotor2.config_kD(1, D);
 
     shootMotor1.selectProfileSlot(1, 0);
     shootMotor2.selectProfileSlot(1, 0);
+
+    currentLimitConfiguration = new SupplyCurrentLimitConfiguration(
+      true, // enabled or not
+      CURRENT_LIMIT, // current to limit to after 
+      CURRENT_THRESHOLD, // current to start limiting at
+      TIMEOUT // time in seconds before current limit takes effect
+    );
+
+    shootMotor1.configSupplyCurrentLimit(currentLimitConfiguration);
+    shootMotor2.configSupplyCurrentLimit(currentLimitConfiguration);
   }
 
    /**
     * Sets speed of motors in order to shoot in low goal
     */
   public void shootLow(){
-    // Open loop control is used on feed motors
-    if (upToSpeed()) {
-      // Only feed if the shooter is ready
-      feederMotor.set(ControlMode.PercentOutput, LOAD_SPEED);
-    }
-
     setpoint = LOW_RPM;
   }
 
@@ -74,10 +94,6 @@ public class OuttakeSubsystem extends SubsystemBase {
    * Sets speed of motors in order to shoot in high goal
    */
   public void shootHigh(){
-    if (upToSpeed()) {
-      feederMotor.set(ControlMode.PercentOutput, LOAD_SPEED);
-    }
-
     setpoint = HIGH_RPM;
   }
 
@@ -95,14 +111,19 @@ public class OuttakeSubsystem extends SubsystemBase {
    */
   public boolean upToSpeed() {
     // Units are in encoder units per 100 ms right now
-    double velocity = shootMotor1.getSensorCollection().getIntegratedSensorVelocity();
+    velocity = encoder1.getIntegratedSensorVelocity();
 
     // converting from encoder ticks / 100 ms to rotations per minutes
     // ((velocity * 10 ms) * 60 s) / 2048 ticks
     double rpm = (velocity * 60 * 10) / 2048;
 
     // check if rpm is within tolerance
-    return rpm >= (setpoint - setpointError) && rpm <= (setpoint + setpointError);
+    if (setpoint != 0) {  
+      return rpm >= (setpoint - RPM_ERROR) && rpm <= (setpoint + RPM_ERROR);
+    }
+    else {
+      return false;
+    }
   }
 
   /**
@@ -118,11 +139,59 @@ public class OuttakeSubsystem extends SubsystemBase {
   public Orchestra getOrchestra() {
     return this.orchestra;
   }
+  
+  /**
+   * Setpoint adjusted to units used for CTRE motors
+   * 
+   * @return encoder ticks per 100 ms
+   */
+  public double getAdjustedSetpoint() {
+    // 2048 is encoder ticks per rotation
+    // 60 * 10 is minutes to seconds and seconds to 100 ms
+    return (setpoint * 2048) / 600;
+  }
+
+  /**
+   * Distance between both encoders
+   * 
+   * @return encoder ticks
+   */
+  private double getEncoderDelta() {
+    return encoder2.getIntegratedSensorPosition() + encoder1.getIntegratedSensorPosition();
+  }
+
+  /**
+   * Set the position of both encoders to 0
+   */
+  public void resetEncoders() {
+    encoder1.setIntegratedSensorPosition(0, 10);
+    encoder2.setIntegratedSensorPosition(0, 10);
+  }
 
   @Override
   public void periodic() {
     // This method will be called once per scheduler run
-    shootMotor1.set(ControlMode.Velocity, setpoint);
+    shootMotor1.set(TalonFXControlMode.Velocity, getAdjustedSetpoint());
+    shootMotor2.set(TalonFXControlMode.Velocity, getAdjustedSetpoint());
+
+    // the velocity variable is updated in period by the upToSpeed() method
+
+    // Open loop control is used on feed motors
+    if (upToSpeed() && setpoint != 0) {
+      // Only feed if the shooter is ready
+      feederMotor.set(ControlMode.PercentOutput, LOAD_SPEED);
+    } else {
+      feederMotor.set(ControlMode.PercentOutput, 0);
+    }
+  }
+
+  /**
+   * Current velocity of the shooter motors
+   * 
+   * @return RPM
+   */
+  private double getVelocity() {
+    return (velocity * 600) / 2048;
   }
 
   @Override
@@ -130,6 +199,10 @@ public class OuttakeSubsystem extends SubsystemBase {
     builder.setSmartDashboardType("OuttakeSubsystem");
     builder.addBooleanProperty("Up to speed", this::upToSpeed, null);
     builder.addDoubleProperty("Setpoint", this::getSetpoint, null);
+    builder.addDoubleProperty("Adjusted setpoint", this::getAdjustedSetpoint, null);
+
+    builder.addDoubleProperty("Velocity", this::getVelocity, null);
+    builder.addDoubleProperty("Encoder delta", this::getEncoderDelta, null);
   }
 
   /**

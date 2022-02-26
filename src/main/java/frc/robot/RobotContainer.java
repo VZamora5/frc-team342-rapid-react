@@ -8,9 +8,12 @@ import java.util.HashMap;
 import java.util.Map;
 
 import edu.wpi.first.math.trajectory.Trajectory;
+import edu.wpi.first.util.sendable.Sendable;
+import edu.wpi.first.util.sendable.SendableRegistry;
 import edu.wpi.first.wpilibj.GenericHID;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.XboxController;
+import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
@@ -18,6 +21,11 @@ import edu.wpi.first.wpilibj2.command.button.JoystickButton;
 
 import frc.robot.commands.intake.Deploy;
 import frc.robot.commands.intake.Retract;
+import frc.robot.commands.intake.ReverseIntake;
+import frc.robot.commands.auto.DriveFunctions;
+import frc.robot.commands.auto.DriveToCargo;
+import frc.robot.commands.auto.DriveToHub;
+import frc.robot.commands.auto.ShootThreeStart;
 import frc.robot.commands.climb.ClimbStageTwoBackward;
 import frc.robot.commands.climb.ClimbStageTwoForward;
 import frc.robot.commands.drive.DriveWithJoystick;
@@ -55,6 +63,7 @@ public class RobotContainer {
   private InstantCommand zeroRotatingArm;
   private Command deploy;
   private Command retract;
+  private Command reverseIntake;
   private Command stage2Backwards;
   private Command stage2Forwards;
 
@@ -68,11 +77,17 @@ public class RobotContainer {
 
   private XboxController operator;
   private JoystickButton deployBtn;
+  private JoystickButton reverseIntakeBtn;
   private JoystickButton outtakeBtn;
   private JoystickButton stage2ForwardBtn;
   private JoystickButton stage2BackwardBtn;
   private JoystickButton zeroRotatingArmBtn;
 
+  private SendableChooser<Command> autoChooser;
+  private Command driveToCargo;
+  private Command driveToHub;
+  private Command shootThreeStart;
+  private Command exitTarmac;
 
   /** The container for the robot. Contains subsystems, OI devices, and commands. */
   public RobotContainer() {
@@ -81,7 +96,6 @@ public class RobotContainer {
     driveSystem = new DriveSystem();
     outtake = new OuttakeSubsystem();
     intake = new IntakeSubsystem();
-    outtake = new OuttakeSubsystem();
     climb = new ClimbSubsystem();
 
     photon = new PhotonVision("camera");
@@ -98,9 +112,10 @@ public class RobotContainer {
     // Operator buttons
     deployBtn = new JoystickButton(operator, OP_DEPLOY_INTAKE_BTN); // Right bumper
     outtakeBtn = new JoystickButton(operator, OP_OUTTAKE_HIGH_BTN); // Left bumper
+    reverseIntakeBtn = new JoystickButton(operator, OP_REVERSE_INTAKE_BTN); // B Button
     stage2ForwardBtn = new JoystickButton(operator, OP_CLIMB_STAGE2_FORWARD_BTN); // X button
     stage2BackwardBtn = new JoystickButton(operator, OP_CLIMB_STAGE2_REVERSE_BTN); // Y button
-    zeroRotatingArmBtn = new JoystickButton(driver, ZERO_ROTATING_ARM_BTN); 
+    zeroRotatingArmBtn = new JoystickButton(driver, OP_ZERO_ROTATING_ARM_BTN); 
 
     // Toggle Commands
     toggleFieldOriented = new InstantCommand(driveSystem::toggleFieldOriented, driveSystem);
@@ -115,18 +130,19 @@ public class RobotContainer {
     outtakeHigh = new OuttakeHigh(outtake);
     
     // Intake Commands
-    deploy = new Deploy(intake);
-    retract = new Retract(intake);
-    intake.setDefaultCommand(retract);
+    /*retract = new Retract(intake);
+    deploy = new Deploy(intake).andThen(new Retract(intake));
+    reverseIntake = new ReverseIntake(intake).andThen(new Retract(intake));
+    intake.setDefaultCommand(retract);*/
 
     // Drive With Joystick
     driveWithJoystick = new DriveWithJoystick(driveSystem, driver);
     driveSystem.setDefaultCommand(driveWithJoystick);
 
     // Second stage climb commands
-    stage2Backwards = new ClimbStageTwoBackward(climb);
+    /*stage2Backwards = new ClimbStageTwoBackward(climb);
     stage2Forwards = new ClimbStageTwoForward(climb);
-    zeroRotatingArm = new InstantCommand(climb::zeroRotatingArm, climb);
+    zeroRotatingArm = new InstantCommand(climb::zeroRotatingArm, climb);*/
 
     // Configure the button bindings
     configureButtonBindings();
@@ -137,6 +153,23 @@ public class RobotContainer {
     SmartDashboard.putData(limelight);
     SmartDashboard.putData(photon);
     SmartDashboard.putData(climb);
+
+    // Makes the autonomous chooser and associated commands
+    autoChooser = new SendableChooser<>();
+    driveToCargo = new DriveToCargo(driveSystem, photon);
+    driveToHub = new DriveToHub(driveSystem, limelight);
+    shootThreeStart = new ShootThreeStart(outtake, driveSystem, photon, intake, limelight);
+    exitTarmac = new DriveFunctions(driveSystem, outtake);
+
+    // Add options to the smart dashboard
+    autoChooser.setDefaultOption("Shoot 1 Cargo", driveToHub);
+    autoChooser.addOption("Shoot 2 Cargo", driveToCargo);
+    autoChooser.addOption("Shoot 3 Cargo", shootThreeStart);
+    autoChooser.setDefaultOption("Shoot 1 and leave the tarmac", exitTarmac);
+
+    // Sets chooser name and sends to dashboard
+    SendableRegistry.setName(autoChooser, "Autonomous Chooser");
+    SmartDashboard.putData(autoChooser);
   }
 
   /**
@@ -151,13 +184,15 @@ public class RobotContainer {
     toggleSlowModeBtn.whenPressed(toggleSlowMode); // Button 7
 
     // Operator
-    deployBtn.whileHeld(deploy); // Right bumper
-    outtakeBtn.toggleWhenPressed(outtakeHigh); // Left bumper
-    stage2ForwardBtn.whileHeld(stage2Forwards); // X button
+    /*deployBtn.whileHeld(deploy); // Right bumper
+    reverseIntakeBtn.whileHeld(reverseIntake); // B button*/
+    outtakeBtn.whileHeld(outtakeHigh); // Left bumper
+    /*stage2ForwardBtn.whileHeld(stage2Forwards); // X button
     stage2BackwardBtn.whileHeld(stage2Backwards); // Y button
-    zeroRotatingArmBtn.whenPressed(zeroRotatingArm);
+    zeroRotatingArmBtn.whenPressed(zeroRotatingArm);*/
   }
 
+  
   /**
    * Use this to pass the autonomous command to the main {@link Robot} class.
    *

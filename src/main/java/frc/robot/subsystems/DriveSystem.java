@@ -81,6 +81,11 @@ public class DriveSystem extends SubsystemBase {
     frontRight = new CANSparkMax(FRONT_RIGHT_MOTOR, MotorType.kBrushless);
     backRight = new CANSparkMax(BACK_RIGHT_MOTOR, MotorType.kBrushless);
 
+    frontLeft.setInverted(false);
+    frontRight.setInverted(true);
+    backLeft.setInverted(false);
+    backRight.setInverted(true);
+
     // Current limits on breakers are set to 40 Amps
     frontLeft.setSmartCurrentLimit(CURRENT_LIMIT);
     backLeft.setSmartCurrentLimit(CURRENT_LIMIT);
@@ -189,7 +194,7 @@ public class DriveSystem extends SubsystemBase {
    */
   public MecanumControllerCommand trajectoryCommand(Trajectory trajectory) {
     return new MecanumControllerCommand(
-      trajectory, // Path to follow
+      (trajectory != null) ? trajectory : new Trajectory(), // Path to follow
       this::getPose, // Current robot position
 
       KINEMATICS, // Distance from center of robot to each wheel
