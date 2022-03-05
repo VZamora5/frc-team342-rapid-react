@@ -18,6 +18,10 @@ import edu.wpi.first.wpilibj.XboxController;
  * constants are needed, to reduce verbosity.
  */
 public final class Constants {
+    //Constants for robot check
+    public static final double VOLTAGE_THRESHOLD = 4.5;
+    public static final int ROBOT_ANALOG_CHECKER_CHANNEL = 0;
+
     public final static class DriveConstants {
         // Motor IDs
         public static final int FRONT_LEFT_MOTOR = 1;
@@ -93,10 +97,10 @@ public final class Constants {
         public static final double CPR = 2048;
 
         /** RPM to shoot for low hub. */
-        public static final double LOW_RPM = 1000.0f;
+        public static final double LOW_RPM = 2300.0f;
 
         /** RPM to shoot for upper hub. */
-        public static final double HIGH_RPM = 2000.0f;
+        public static final double HIGH_RPM = 5000.0f; //LOW RPM LOL
 
         /** RPM tolerance for being considered up to speed. */
         public static final double RPM_ERROR = 45;
@@ -132,21 +136,22 @@ public final class Constants {
         public static final int DEPLOY_RIGHT_MOTOR = 9;
         public static final int ROLLER_MOTOR = 10;
 
-        public static final double MIN_INTAKE_ANGLE = 0.25;
-        public static final double MAX_INTAKE_ANGLE = 62.0;
+        public static final double MIN_INTAKE_ANGLE = 52.75;
+        public static final double MAX_INTAKE_ANGLE = 15.0;
 
-        public static final double INTAKE_P = 0.05;
+        public static final double INTAKE_P = 0.000005;
 
-        public static final double DEPLOY_SPEED = 0.5;
+        public static final double DEPLOY_SPEED = 0.6;
         public static final double INTAKE_SPEED = 0.5;
 
         public static final int LIMIT_SWITCH_UP = 3;
         public static final int LIMIT_SWITCH_DOWN = 4;
 
-        public static final int CURRENT_LIMIT = 5;
+        public static final int DEPLOY_CURRENT_LIMIT = 50;
+        public static final int ROLLER_CURRENT_LIMIT = 30;
         public static final int CURRENT_DURATION = 500;
 
-        public static final int ENCODER_TICKS_PER_ROTATION = 8192;
+        public static final double ENCODER_TICKS_PER_ROTATION = 8192.0f;
     }
 
     public static final class ControllerConstants {
@@ -165,5 +170,6 @@ public final class Constants {
         public static final int OP_CLIMB_STAGE2_FORWARD_BTN = XboxController.Button.kX.value;
         public static final int OP_ZERO_ROTATING_ARM_BTN = XboxController.Button.kStart.value;
         public static final int OP_REVERSE_INTAKE_BTN = XboxController.Button.kB.value;
+        public static final int OP_TOGGLE_SLOW_BTN = XboxController.Button.kBack.value;
     }
 }

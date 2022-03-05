@@ -24,6 +24,7 @@ import edu.wpi.first.wpilibj.ADIS16470_IMU;
 import edu.wpi.first.wpilibj.drive.MecanumDrive;
 import edu.wpi.first.wpilibj2.command.MecanumControllerCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.Robot;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -63,7 +64,7 @@ public class DriveSystem extends SubsystemBase {
   private RelativeEncoder frontRightEncoder;
   private RelativeEncoder backRightEncoder;
 
-  private boolean fieldOriented = true;
+  private boolean fieldOriented = false;
   private ADIS16470_IMU gyro;
 
   private MecanumDrive mecanumDrive;
@@ -81,10 +82,17 @@ public class DriveSystem extends SubsystemBase {
     frontRight = new CANSparkMax(FRONT_RIGHT_MOTOR, MotorType.kBrushless);
     backRight = new CANSparkMax(BACK_RIGHT_MOTOR, MotorType.kBrushless);
 
-    frontLeft.setInverted(false);
-    frontRight.setInverted(true);
-    backLeft.setInverted(false);
-    backRight.setInverted(true);
+    if (Robot.checkType() == Robot.RobotType.A_BOT) {
+      frontLeft.setInverted(false);
+      backLeft.setInverted(false);
+      frontRight.setInverted(true);
+      backRight.setInverted(true);
+    } else {
+      frontLeft.setInverted(false);
+      backLeft.setInverted(false);
+      frontRight.setInverted(true);
+      backRight.setInverted(true);
+    }
 
     // Current limits on breakers are set to 40 Amps
     frontLeft.setSmartCurrentLimit(CURRENT_LIMIT);
@@ -137,7 +145,7 @@ public class DriveSystem extends SubsystemBase {
     double x = xVelocity * currentMode.speedMultiplier;
     double y = yVelocity * currentMode.speedMultiplier;
     double rotation = rotationVelocity * currentMode.speedMultiplier;
-
+    
     if (fieldOriented) {
       mecanumDrive.driveCartesian(y, x, rotation, -gyro.getAngle());
     } else {
