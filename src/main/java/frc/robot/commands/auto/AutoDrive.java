@@ -55,7 +55,6 @@ public class AutoDrive extends CommandBase {
   @Override
   public void end(boolean interrupted) {
     subsystem.drive(0, 0, 0);
-    subsystem.toggleFieldOriented();
   }
 
   // Returns true when the command should end.

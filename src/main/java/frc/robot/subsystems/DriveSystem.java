@@ -25,6 +25,7 @@ import edu.wpi.first.wpilibj.ADIS16470_IMU;
 import edu.wpi.first.wpilibj.drive.MecanumDrive;
 import edu.wpi.first.wpilibj2.command.MecanumControllerCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.Constants;
 import frc.robot.Robot;
 
 import java.util.HashMap;
@@ -77,7 +78,7 @@ public class DriveSystem extends SubsystemBase {
 
   /** Creates a new DriveSystem. */
   public DriveSystem() {
-    fieldOriented = true;
+    fieldOriented = false;
 
     // Capitalized and underscored variable names are statically imported constants from Constants.java
     frontLeft = new CANSparkMax(FRONT_LEFT_MOTOR, MotorType.kBrushless);
@@ -148,7 +149,7 @@ public class DriveSystem extends SubsystemBase {
     double x = xVelocity * currentMode.speedMultiplier;
     double y = yVelocity * currentMode.speedMultiplier;
     double rotation = rotationVelocity * currentMode.speedMultiplier;
-    
+
     if (fieldOriented) {
       mecanumDrive.driveCartesian(y, x, rotation, -gyro.getAngle());
     } else {

@@ -25,7 +25,7 @@ public class ShootPreloadedExit extends SequentialCommandGroup {
     this.drive = drive;
     this.outtake = outtake;
 
-    exitTarmac = new AutoDrive(drive, 1.25);
+    exitTarmac = new AutoDrive(drive, 1.15);
 
     addRequirements(drive);
     addRequirements(outtake);
