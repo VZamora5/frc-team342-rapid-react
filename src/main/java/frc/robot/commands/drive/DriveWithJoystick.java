@@ -11,15 +11,17 @@ import frc.robot.subsystems.DriveSystem;
 
 public class DriveWithJoystick extends CommandBase {
   
-  DriveSystem driveSystem;
-  Joystick driver;
+  DriveSystem drive;
+  Joystick leftJ;
+  Joystick rightJ;
   
   /** Creates a new DriveWithJoystick. */
-  public DriveWithJoystick(DriveSystem drive, Joystick j) {
+  public DriveWithJoystick(DriveSystem drive, Joystick leftJ, Joystick rightJ) {
 
     addRequirements(drive);
-    this.driveSystem = drive;
-    this.driver = j;
+    this.drive = drive;
+    this.leftJ = leftJ;
+    this.rightJ = rightJ;
     // Use addRequirements() here to declare subsystem dependencies.
   }
   
@@ -33,12 +35,10 @@ public class DriveWithJoystick extends CommandBase {
   public void execute() {
 
     // Checks whether joystick is within a deadzone and returns val
-    double deadBandX = MathUtil.applyDeadband(driver.getX(), 0.15);
-    double deadBandY = MathUtil.applyDeadband(driver.getY(), 0.15);
-    double deadBandZ = MathUtil.applyDeadband(driver.getZ(), 0.15);
+    double deadBandLeft = MathUtil.applyDeadband(leftJ.getY(), 0.15);
+    double deadBandRight = MathUtil.applyDeadband(rightJ.getY(), 0.15);
 
-    driveSystem.drive(-deadBandX, deadBandY, -deadBandZ / 2);
-
+    drive.drive(xVelocity, yVelocity, rotationVelocity);
   }
 
   // Called once the command ends or is interrupted.

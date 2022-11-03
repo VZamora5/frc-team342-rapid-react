@@ -22,7 +22,9 @@ import edu.wpi.first.math.trajectory.TrajectoryConfig;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.util.sendable.SendableBuilder;
 import edu.wpi.first.wpilibj.ADIS16470_IMU;
+import edu.wpi.first.wpilibj.drive.DifferentialDrive;
 import edu.wpi.first.wpilibj.drive.MecanumDrive;
+import edu.wpi.first.wpilibj.motorcontrol.MotorControllerGroup;
 import edu.wpi.first.wpilibj2.command.MecanumControllerCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
@@ -56,6 +58,10 @@ public class DriveSystem extends SubsystemBase {
   private CANSparkMax frontRight;
   private CANSparkMax backRight;
 
+  private MotorControllerGroup leftGroup;
+  private MotorControllerGroup rightGroup;
+  private DifferentialDrive tank;
+
   private SparkMaxPIDController frontLeftController;
   private SparkMaxPIDController backLeftController;
   private SparkMaxPIDController frontRightController;
@@ -68,8 +74,6 @@ public class DriveSystem extends SubsystemBase {
 
   private boolean fieldOriented;
   private ADIS16470_IMU gyro;
-
-  private MecanumDrive mecanumDrive;
 
   private MecanumDriveOdometry odometry;
   private TrajectoryConfig trajectoryConfig;
@@ -85,6 +89,10 @@ public class DriveSystem extends SubsystemBase {
     backLeft = new CANSparkMax(BACK_LEFT_MOTOR, MotorType.kBrushless);
     frontRight = new CANSparkMax(FRONT_RIGHT_MOTOR, MotorType.kBrushless);
     backRight = new CANSparkMax(BACK_RIGHT_MOTOR, MotorType.kBrushless);
+
+    leftGroup = new MotorControllerGroup(frontLeft, backLeft);
+    rightGroup = new MotorControllerGroup(frontRight, backRight);
+    tank = new DifferentialDrive(leftGroup, rightGroup);
 
     if (Robot.checkType() == Robot.RobotType.A_BOT) {
       frontLeft.setInverted(false);
@@ -128,7 +136,6 @@ public class DriveSystem extends SubsystemBase {
     frontRightEncoder = frontRight.getEncoder();
     backRightEncoder = backRight.getEncoder();
 
-    mecanumDrive = new MecanumDrive(frontLeft, backLeft, frontRight, backRight);
     gyro = new ADIS16470_IMU();
 
     odometry = new MecanumDriveOdometry(KINEMATICS, new Rotation2d(gyro.getAngle()));
@@ -149,12 +156,9 @@ public class DriveSystem extends SubsystemBase {
     double x = xVelocity * currentMode.speedMultiplier;
     double y = yVelocity * currentMode.speedMultiplier;
     double rotation = rotationVelocity * currentMode.speedMultiplier;
+ 
+    
 
-    if (fieldOriented) {
-      mecanumDrive.driveCartesian(y, x, rotation, -gyro.getAngle());
-    } else {
-      mecanumDrive.driveCartesian(y, x, rotation);
-    }
   }
 
   public Pose2d getPose() {
