@@ -38,14 +38,14 @@ public class RotateToTarget extends CommandBase {
     double deadBandX = MathUtil.applyDeadband(joy.getX(), 0.15);
     double deadBandY = MathUtil.applyDeadband(joy.getY(), 0.15);
 
-    drive.driveWithTargeting(deadBandX, deadBandY, lime.getHorizontalOffset());
+    //drive.driveWithTargeting(deadBandX, deadBandY, lime.getHorizontalOffset());
     
   }
 
   // Called once the command ends or is interrupted.
   @Override
   public void end(boolean interrupted) {
-    drive.drive(0, 0, 0);
+    //drive.drive(0, 0, 0);
   }
 
   // Returns true when the command should end.

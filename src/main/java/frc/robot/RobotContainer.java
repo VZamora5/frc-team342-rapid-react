@@ -81,6 +81,7 @@ public class RobotContainer {
   
   // Driver Buttons
   private Joystick driver;
+
   private JoystickButton driver_toggleLimelightBtn;
   private JoystickButton driver_toggleFieldOrientedBtn;
   private JoystickButton driver_toggleSlowModeBtn;
@@ -121,6 +122,8 @@ public class RobotContainer {
     driver = new Joystick(DRIVER_PORT);
     operator = new XboxController(OPERATOR_PORT);
 
+    operator = new XboxController(OPERATOR_PORT);
+
     // Driver buttons
     driver_toggleLimelightBtn = new JoystickButton(driver, DRIVER_TOGGLE_LIMELIGHT_BTN); // Button 1
     driver_toggleFieldOrientedBtn = new JoystickButton(driver, DRIVER_FIELD_ORIENTED_BTN); // Button 6
@@ -146,7 +149,7 @@ public class RobotContainer {
     toggleLimelight = new InstantCommand(limelight::toggleDriverMode);
 
     // Drive With Joystick
-    driveWithJoystick = new DriveWithJoystick(driveSystem, driver);
+    driveWithJoystick = new DriveWithJoystick(driveSystem, operator);
     driveSystem.setDefaultCommand(driveWithJoystick);
 
     // Outtake Commands
@@ -163,10 +166,6 @@ public class RobotContainer {
     manualUptake = new ManualUptake(outtake);
 
     intake.setDefaultCommand(retract);
-
-    // Drive With Joystick
-    driveWithJoystick = new DriveWithJoystick(driveSystem, driver);
-    driveSystem.setDefaultCommand(driveWithJoystick);
 
     // Climb
     climbCmd = new Climb(climb, operator);
